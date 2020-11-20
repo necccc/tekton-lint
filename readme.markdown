@@ -23,11 +23,13 @@ Using `tekton-lint` in watch mode will monitor for any changes in the provided p
 
 ```sh
 Options:
-$ tekton-lint --watch   # Run tekton-lint in watch mode
-$ tekton-lint --version # Show version number
-$ tekton-lint --help    # Show help
+$ tekton-lint --watch                # Run tekton-lint in watch mode
+$ tekton-lint --version              # Show version number
+$ tekton-lint --help                 # Show help
 $ tekton-lint --color / --no-color   # Forcefully enable/disable colored output
-$ tekton-lint --format  # Format output. Available formatters: vscode (default) | stylish | json
+$ tekton-lint --format               # Format output. Available formatters: vscode (default) | stylish | json
+$ tekton-lint --quiet                # Report errors only - default: false
+$ tekton-lint --max-warnings <Int>   # Number of warnings to trigger nonzero exit code - default: -1
 
 # exact file path
 $ tekton-lint my-pipeline.yaml my-task.yaml
@@ -94,11 +96,13 @@ You can run this task from _Terminal_ > _Run Task..._ > _Run tekton-lint_:
 
 ### API
 
-#### `linter(globs: string[]): Promise<Problem[]>`
+#### `linter(globs: string[], config?: Config): Promise<Problem[]>`
 
 Runs the linter on the provided `globs`, and resolves to the list of found problems.
 Each problem has a `level` and a `message` property. `path` is the path to the
 original file, `loc` is an object which describes the location of the problem.
+
+An additional `config` object can be passed to fine-tune rules (see [Configuring `tekton-lint`](#configuring-tekton-lint)).
 
 ```ts
 interface Problem {
@@ -113,12 +117,18 @@ interface Problem {
     endColumn: number;
   };
 }
+
+interface Config {
+  rules: {
+    [rule: string]: 'off' | 'warning' | 'error';
+  };
+}
 ```
 
 ##### Example
 
 ```js
-const linter = require('tekton-lint/runner');
+const linter = require('tekton-lint');
 
 const problems = await linter(['path/to/defs/**/*.yaml']);
 
@@ -127,7 +137,7 @@ for (const problem of problems) {
 }
 ```
 
-#### `linter.lint(docs: any[]): Problem[]`
+#### `linter.lint(docs: any[], config?: Config): Problem[]`
 
 Runs the linter on the provided parsed documents. Returns the list of found problems.
 
@@ -206,6 +216,31 @@ for (const problem of problems) {
 - _kebab-case_ naming violations
 - `Task` & `Pipeline` definitions with `tekton.dev/v1alpha1` `apiVersion`
 - Missing `TriggerBinding` parameter values
+- Usage of deprecated `Condition` instead of `WhenExpression`
+- Usage of deprecated resources (resources marked with `tekton.dev/deprecated` label)
+
+### Configuring `tekton-lint`
+
+You can configure `tekton-lint` with a configuration file ([`.tektonlintrc.yaml`](./.tektonlintrc.yaml)) in your project's directory. You can decide which rules are enabled and at what error level.
+
+The configuration file should follow this format:
+```yaml
+---
+rules:
+  rule-name: error | warning | off
+```
+
+Example `.tektonlintrc.yaml` file:
+
+```yaml
+---
+rules:
+  no-duplicate-param: error
+  no-unused-param: warning
+  no-deprecated-resource: off
+```
+
+`tekton-lint` will look for a configuration file named `.tektonlintrc.yaml` in the directory where you run the command. If the configuration file is not present, `tekton-lint` will use the default configuration.
 
 [tekton]: https://tekton.dev
 [node]: https://nodejs.org

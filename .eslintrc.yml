@@ -1,15 +1,22 @@
+plugins:
+- '@typescript-eslint'
+
+parser: '@typescript-eslint/parser'
+
+parserOptions:
+  sourceType: module
+
 env:
-  commonjs: true
   es6: true
   node: true
-extends: 'eslint:recommended'
-globals:
-  Atomics: readonly
-  SharedArrayBuffer: readonly
-parserOptions:
-  ecmaVersion: 2018
-rules:
 
+overrides:
+  - files:
+      - 'regression-tests/*.js'
+    env:
+      jest: true
+
+rules:
   # possible errors
   for-direction: error
   getter-return: error
@@ -85,7 +92,7 @@ rules:
   no-labels: error
   no-lone-blocks: error
   no-loop-func: error
-  no-magic-numbers: ["warn", { "ignore": [1] }]
+  no-magic-numbers: off
   no-multi-spaces: error
   no-multi-str: error
   no-new: error
@@ -131,7 +138,7 @@ rules:
   no-restricted-globals: off
   no-shadow: off
   no-shadow-restricted-names: off
-  no-undef: off
+  no-undef: error
   no-undef-init: error
   no-undefined: off
   no-unused-vars: error
